@@ -9,7 +9,7 @@ using TMPro;
 
 public class DraftRunner : MonoBehaviour
 {
-    public GameObject[] cardObjects = new GameObject[120];
+    public GameObject[] cardObjects = new GameObject[15];
     public GameObject[] manaSlotPositions = new GameObject[10];
 
     public float[] targetDropPos =
@@ -31,8 +31,8 @@ public class DraftRunner : MonoBehaviour
       1.4f
     };
 
-    public string[,] packs;
-    public string[] cardTypes = { "Land", "Creature", "Instant", "Sorcery", "Artifact", "Enchantment"};
+    public string[] pack = new string[15];
+    public string[] cardTypes = { "Land", "Creature", "Instant", "Sorcery", "Artifact", "Enchantment" };
 
     public int[] cardsOfEachType = new int[7];
     public int[] cardInManaSlot = new int[10];
@@ -40,7 +40,7 @@ public class DraftRunner : MonoBehaviour
 
     public List<string> cubeList = new List<string>();
 
-    public bool[] canClick;
+    public bool canClick;
     public bool cardIsUp;
 
     public TextMeshProUGUI typeDisplayText;
@@ -53,19 +53,18 @@ public class DraftRunner : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        packs = new string[8, 15];   
-        canClick = new bool[8];
+        canClick = false;
 
         typeDisplayText.text = "Deck: 0   Land: 0  Creature: 0  Spells: 0  Artifacts: 0  Enchantments: 0 Other: 0";
 
         setCubeList();
-        instantiateCardObjects();    
+        instantiateCardObjects();
     }
 
     // Update is called once per frame
     void Update()
     {
-        if (canClick[0])
+        if (canClick)
         {
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
             RaycastHit hit;
@@ -74,12 +73,12 @@ public class DraftRunner : MonoBehaviour
             {
                 if (hit.collider.gameObject.tag == "card")
                 {
-                    if (Input.GetMouseButtonDown(0) && canClick[0] && !cardIsUp)
+                    if (Input.GetMouseButtonDown(0) && canClick && !cardIsUp)
                     {
                         cardIsUp = false;
                         StartCoroutine(centerSelectedCard(hit.collider.gameObject, 0.3f, new Vector3(0f, 1.13f, 7.36000013f)));
                     }
-                    if (Input.GetMouseButtonDown(1) && canClick[0])
+                    if (Input.GetMouseButtonDown(1) && canClick)
                     {
                         if (hit.collider.gameObject == cardUp)
                         {
@@ -99,22 +98,18 @@ public class DraftRunner : MonoBehaviour
 
     private void instantiateCardObjects()
     {
-        for (int player = 0; player < 8; player++)
+        for (int card = 0; card <= 14; card++)
         {
-            for (int card = 1; card <= 15; card++)
-            {
-                GameObject startPosObject = GameObject.Find("Card Starts " + card);
-                Vector3 startPos = new Vector3(startPosObject.transform.position.x + (66.4f * player), startPosObject.transform.position.y, startPosObject.transform.position.z);
-                int indexToSet = (card - 1) + (15 * player);
-                cardObjects[indexToSet] = Instantiate(cardPrefab, startPos, Quaternion.identity);
-            }
+            GameObject startPosObject = GameObject.Find("Card Starts " + (card + 1));
+            Vector3 startPos = new Vector3(startPosObject.transform.position.x, startPosObject.transform.position.y, startPosObject.transform.position.z);
+            cardObjects[card] = Instantiate(cardPrefab, startPos, Quaternion.identity);
         }
 
         for (int i = 0; i < cardObjects.Length; i++)
         {
             cardObjects[i].transform.rotation = Quaternion.Euler(180f, 180f, 0f);
         }
-        
+
         makePacks();
     }
 
@@ -160,29 +155,24 @@ public class DraftRunner : MonoBehaviour
 
     public IEnumerator rotateCards(float rotDistance, float rotSpeed)
     {
-        
-        for (int i = 0; i < 8; i++)
+        float totalRotation = 0f;
+
+        while (totalRotation < rotDistance)
         {
-            float totalRotation = 0f;
+            float deltaRotation = rotSpeed * Time.deltaTime;
 
-            while (totalRotation < rotDistance)
+            for (int i = 0; i < 15; i++)
             {
-                float deltaRotation = rotSpeed * Time.deltaTime;
-
-                for (int j = 0; j < 15; j++)
-                {
-                    cardObjects[j + (15 * i)].transform.Rotate(Vector3.up, deltaRotation);
-                }
-
-                totalRotation += deltaRotation;
-
-                yield return null;
+                cardObjects[i].transform.Rotate(Vector3.up, deltaRotation);
             }
 
-            canClick[i] = true;
+            totalRotation += deltaRotation;
+
+            yield return null;
         }
 
-        
+        canClick = true;
+
 
         for (int i = 0; i < cardObjects.Length; i++)
         {
@@ -193,7 +183,7 @@ public class DraftRunner : MonoBehaviour
     public void setCubeList()
     {
         string filePath;
-        
+
         filePath = Path.Combine(Application.dataPath, "_Scripts", "vintage_cube.txt");
 
         if (File.Exists(filePath))
@@ -217,14 +207,11 @@ public class DraftRunner : MonoBehaviour
     {
         int cardToAdd = 0;
 
-        for (int pack = 0; pack < 8; pack++)
+        for (int card = 0; card < 15; card++)
         {
-            for (int card = 0; card < 15; card++)
-            {
-                cardToAdd = Random.Range(0, cubeList.Count);
-                packs[pack, card] = cubeList[cardToAdd];
-                cubeList.RemoveAt(cardToAdd);
-            }
+            cardToAdd = Random.Range(0, cubeList.Count);
+            pack[card] = cubeList[cardToAdd];
+            cubeList.RemoveAt(cardToAdd);
         }
 
         StartCoroutine(getApiCardInfo());
@@ -235,31 +222,28 @@ public class DraftRunner : MonoBehaviour
     {
         int count = 0;
 
-        for (int pack = 0; pack < 8; pack++)
+        for (int card = 0; card < 15; card++, count++)
         {
-            for (int card = 0; card < 15; card++, count++)
+            string cardName = pack[card];
+            cardName = UnityWebRequest.EscapeURL(cardName);
+            string url = "https://api.scryfall.com/cards/named?exact=" + cardName;
+
+            using (UnityWebRequest webRequest = UnityWebRequest.Get(url))
             {
-                string cardName = packs[pack, card];
-                cardName = UnityWebRequest.EscapeURL(cardName);
-                string url = "https://api.scryfall.com/cards/named?exact=" + cardName;
+                yield return webRequest.SendWebRequest();
 
-                using (UnityWebRequest webRequest = UnityWebRequest.Get(url))
+                if (webRequest.result == UnityWebRequest.Result.ConnectionError || webRequest.result == UnityWebRequest.Result.ProtocolError)
                 {
-                    yield return webRequest.SendWebRequest();
-
-                    if (webRequest.result == UnityWebRequest.Result.ConnectionError || webRequest.result == UnityWebRequest.Result.ProtocolError)
-                    {
-                        Debug.LogError("Error: " + webRequest.error);
-                    }
-                    else
-                    {
-                        Card cardScript = cardObjects[count].GetComponent<Card>();
-                        cardScript.setCardName(packs[pack, card]);
-                        cardScript.setManaCost(getManaCostFromResponse(webRequest.downloadHandler.text));
-                        cardScript.setCardType(getCardTypeFromResponse(webRequest.downloadHandler.text));
-                        StartCoroutine(setCardObjectTexture(webRequest.downloadHandler.text, cardObjects[count]));
-                        // Debug.Log("API Response: " + webRequest.downloadHandler.text);
-                    }
+                    Debug.LogError("Error: " + webRequest.error);
+                }
+                else
+                {
+                    Card cardScript = cardObjects[count].GetComponent<Card>();
+                    cardScript.setCardName(pack[card]);
+                    cardScript.setManaCost(getManaCostFromResponse(webRequest.downloadHandler.text));
+                    cardScript.setCardType(getCardTypeFromResponse(webRequest.downloadHandler.text));
+                     StartCoroutine(setCardObjectTexture(webRequest.downloadHandler.text, cardObjects[count]));
+                     // Debug.Log("API Response: " + webRequest.downloadHandler.text);
                 }
             }
         }
@@ -333,7 +317,7 @@ public class DraftRunner : MonoBehaviour
 
     private IEnumerator zoomInCard(GameObject card, float glideDuration, Vector3 targetPos)
     {
-        canClick[0] = false;
+        canClick = false;
         if (cardIsUp)
         {
             StartCoroutine(zoomOutCard(cardUp, glideDuration, cardUp.transform.position, originalPos));
@@ -356,12 +340,12 @@ public class DraftRunner : MonoBehaviour
 
         card.transform.position = targetPos;
 
-        canClick[0] = true;
+        canClick = true;
     }
 
     private IEnumerator zoomOutCard(GameObject card, float glideDuration, Vector3 currentPos, Vector3 targetPos)
     {
-        canClick[0] = false;
+        canClick = false;
         cardIsUp = false;
 
         float elapsedTime = 0f;
@@ -378,12 +362,12 @@ public class DraftRunner : MonoBehaviour
         }
 
         card.transform.position = targetPos;
-        canClick[0] = true;
+        canClick = true;
     }
 
     private IEnumerator centerSelectedCard(GameObject card, float glideDuration, Vector3 targetPos)
     {
-        canClick[0] = false;
+        canClick = false;
         Vector3 startPosition = card.transform.position;
 
         float elapsedTime = 0f;
@@ -452,6 +436,5 @@ public class DraftRunner : MonoBehaviour
 
         typeDisplayText.text = "Deck: " + cardsInDeck + "   Land: " + cardsOfEachType[0] + "  Creature: " + cardsOfEachType[1] + "  Spells: " + (cardsOfEachType[2] + cardsOfEachType[3]) + "  Artifacts: " + cardsOfEachType[4] + "  Enchantments: " + cardsOfEachType[5] + " Other: " + cardsOfEachType[6];
 
-        //canClick[0] = true;
     }
 }
