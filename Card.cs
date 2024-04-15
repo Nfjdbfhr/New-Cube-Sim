@@ -5,10 +5,12 @@ using UnityEngine;
 public class Card : MonoBehaviour
 {
 
-    private int manaCost;
-    private string cardName;
-    private string cardType;
-    private bool isInDeck;
+    public int manaCost;
+    public string cardName;
+    public string cardType;
+    public string color;
+    public bool isInDeck;
+    public bool isInSideboard = false;
 
     // Start is called before the first frame update
     void Start()
@@ -64,5 +66,25 @@ public class Card : MonoBehaviour
     public bool getIsInDeck()
     {
         return isInDeck;
+    }
+
+    public void setIsInSideboard(bool toSet)
+    {
+        isInSideboard = toSet;
+    }
+
+    public bool getIsInSideboard()
+    {
+        return isInSideboard;
+    }
+
+    public void setColor(string toSet)
+    {
+        color = toSet;
+    }
+
+    public string getColor()
+    {
+        return color;
     }
 }
