@@ -9,7 +9,7 @@ using TMPro;
 
 public class DraftRunner : MonoBehaviour
 {
-    public GameObject[] cardObjects = new GameObject[15];
+    public List<GameObject> cardObjects = new List<GameObject>();
     public GameObject[] manaSlotPositions = new GameObject[10];
     public GameObject[] startPosObjects = new GameObject[15];
     public GameObject centerPosition;
@@ -43,6 +43,7 @@ public class DraftRunner : MonoBehaviour
     public int pickNum = 0;
     public int cardsInDeck = 0;
     public int playernum;
+    public int landPickedNum = 0;
 
     public bool hasChosen = false;
 
@@ -113,7 +114,7 @@ public class DraftRunner : MonoBehaviour
                     }
                     else
                     {
-                        for (int i = 0; i < cardObjects.Length; i++)
+                        for (int i = 0; i < cardObjects.Count; i++)
                         {
                             cardObjects[i].transform.localScale = new Vector3(1.67f, 2.33f, cardObjects[i].transform.localScale.z);
                         }
@@ -166,10 +167,10 @@ public class DraftRunner : MonoBehaviour
         for (int card = 0; card <= 14; card++)
         {
             Vector3 startPos = new Vector3(startPosObjects[card].transform.position.x, startPosObjects[card].transform.position.y, startPosObjects[card].transform.position.z);
-            cardObjects[card] = Instantiate(cardPrefab, startPos, Quaternion.identity);
+            cardObjects.Add(Instantiate(cardPrefab, startPos, Quaternion.identity));
         }
 
-        for (int i = 0; i < cardObjects.Length; i++)
+        for (int i = 0; i < cardObjects.Count; i++)
         {
             cardObjects[i].transform.rotation = Quaternion.Euler(180f, 180f, 0f);
         }
@@ -188,7 +189,7 @@ public class DraftRunner : MonoBehaviour
 
         while (timeElapsed < 2f)
         {
-            for (int i = 0; i < cardObjects.Length; i++)
+            for (int i = 0; i < cardObjects.Count; i++)
             {
                 Card cardScript = cardObjects[i].GetComponent<Card>();
                 if (!cardScript.getIsInDeck())
@@ -212,7 +213,7 @@ public class DraftRunner : MonoBehaviour
             yield return null;
         }
 
-        for (int i = 0; i < cardObjects.Length; i++)
+        for (int i = 0; i < cardObjects.Count; i++)
         {
             Card cardScript = cardObjects[i].GetComponent<Card>();
             if (!cardScript.getIsInDeck())
@@ -232,7 +233,7 @@ public class DraftRunner : MonoBehaviour
         {
             float deltaRotation = rotSpeed * Time.deltaTime;
 
-            for (int i = 0; i < 15; i++)
+            for (int i = 0; i < cardObjects.Count; i++)
             {
                 Card cardScript = cardObjects[i].GetComponent<Card>();
                 if (!cardScript.getIsInDeck())
@@ -249,15 +250,15 @@ public class DraftRunner : MonoBehaviour
         canClick = true;
         canZoom = true;
 
-        for (int i = 0; i < cardObjects.Length; i++)
+        for (int i = 0; i < cardObjects.Count; i++)
         {
             cardObjects[i].transform.rotation = Quaternion.Euler(-180f, 0f, 0f);
         }
 
         if (isBot)
         {
-            yield return new WaitForSeconds(Random.Range(3f, 5f));
-            StartCoroutine(takeBotCard());
+            yield return new WaitForSeconds(Random.Range(2f, 5f));
+            takeBotCard();
         }
     }
 
@@ -308,11 +309,11 @@ public class DraftRunner : MonoBehaviour
         "Urza's Saga"
     };
 
-    public IEnumerator takeBotCard()
+    public void takeBotCard()
     {
         int randomCard = 0;
         int higestPowerIndex = powerCardNames.Length + 1;
-        for (int i = 0; i < cardObjects.Length; i++)
+        for (int i = 0; i < cardObjects.Count; i++)
         {
             if (!cardObjects[i].GetComponent<Card>().getIsInDeck())
             {
@@ -335,27 +336,49 @@ public class DraftRunner : MonoBehaviour
         }
 
         bool foundCardInColor = false;
-        bool putInSideboard = false;
 
         if (higestPowerIndex == powerCardNames.Length + 1)
         {
-            if (colors.Count > 1 || (colors.Count > 0 && Random.Range(0, 3) == 0))
+            bool isTakingLand = false;
+            if (Random.Range(0, 5) == 1 && pickNum > 4 && landPickedNum < 7)
+            {
+                List<int> landsFoundIndex = new List<int>();
+                for (int i = 0; i < cardObjects.Count; i++)
+                {
+                    if (cardObjects[i].GetComponent<Card>().getCardType().IndexOf("Land") != -1)
+                    {
+                        landsFoundIndex.Add(i);
+                    }
+                }
+
+                if (landsFoundIndex.Count > 0)
+                {
+                    randomCard = landsFoundIndex[Random.Range(0, landsFoundIndex.Count)];
+                    isTakingLand = true;
+                    landPickedNum++;
+                }
+            }
+            if ((colors.Count > 1 || (colors.Count > 0 && Random.Range(0, 3) == 0)) && !isTakingLand)
             {
                 List <int> cardsInColorIndex = new List<int>();
-                for (int i = 0; i < cardObjects.Length; i++)
+                for (int i = 0; i < cardObjects.Count; i++)
                 {
                     Card cardStats = cardObjects[i].GetComponent<Card>();
                     if (!cardStats.getIsInDeck())
                     {
-                        for (int cardObj = 0; cardObj < cardObjects.Length; cardObj++)
+                        for (int cardObj = 0; cardObj < cardObjects.Count; cardObj++)
                         {
                             for (int j = 0; j < colors.Count; j++)
                             {
+                                //for (int letter = 0; letter < cardObjects[cardObj].GetComponent<Card>().getColor().Length; letter++)
+                                //{
+                                //if (colors[j].IndexOf())
                                 if (cardObjects[cardObj].GetComponent<Card>().getColor().IndexOf(colors[j]) != -1)
                                 {
                                     cardsInColorIndex.Add(cardObj);
                                     foundCardInColor = true;
-                                } 
+                                }
+                                //}
                             }
                         }
                     }
@@ -363,24 +386,24 @@ public class DraftRunner : MonoBehaviour
                 if (foundCardInColor)
                 {
                     randomCard = cardsInColorIndex[Random.Range(0, cardsInColorIndex.Count)];
-                    addColors(cardObjects[randomCard]);
+                    //addColors(cardObjects[randomCard]);
                 }
             }
             if (!foundCardInColor)
             {
                 do
                 {
-                    randomCard = Random.Range(0, cardObjects.Length);
+                    randomCard = Random.Range(0, cardObjects.Count);
                 }
                 while(cardObjects[randomCard].GetComponent<Card>().getIsInDeck());
 
-                if (colors.Count < 2)
+                if (colors.Count < 2 || Random.Range(0, 50) == 25)
                 {
                     addColors(cardObjects[randomCard]);
                 }
-                else if (Random.Range(0, 100) != 69)
+                else
                 {
-                    putInSideboard = true;
+                    StartCoroutine(moveToSideboard(cardObjects[randomCard], 0.1f, manaSlotPositions[9].transform.position));
                 }
             }
         }
@@ -389,13 +412,6 @@ public class DraftRunner : MonoBehaviour
         cardScript.setIsInDeck(true);
         StartCoroutine(centerSelectedCard(cardObjects[randomCard], 0.3f, centerPosition.transform.position));
         StartCoroutine(MoveCardsOff());
-
-        if (putInSideboard)
-        {
-            yield return new WaitForSeconds(1.75f);
-
-            StartCoroutine(moveToSideboard(cardObjects[randomCard], 0.1f, manaSlotPositions[9].transform.position));
-        }
     }
 
     public void addColors(GameObject card)
@@ -423,7 +439,7 @@ public class DraftRunner : MonoBehaviour
     public void nextPack()
     {
         int numSkipped = 0;
-        for (int card = 0; card < cardObjects.Length; card++)
+        for (int card = 0; card < cardObjects.Count; card++)
         {
             Card cardScript = cardObjects[card].GetComponent<Card>();
             if (!cardScript.getIsInDeck())
@@ -490,36 +506,6 @@ public class DraftRunner : MonoBehaviour
         StartCoroutine(getApiCardInfo());
     }
 
-
-    public void MoveCardToEnd(string cardName)
-    {
-        // Find the index of the card with the given name
-        int index = -1;
-        for (int i = 0; i < cardObjects.Length; i++)
-        {
-            if (cardObjects[i].name == cardName)
-            {
-                index = i;
-                break;
-            }
-        }
-
-        // If the card with the given name is found
-        if (index != -1)
-        {
-            // Move the card to the end of the array
-            GameObject cardToMove = cardObjects[index];
-            for (int i = index; i < cardObjects.Length - 1; i++)
-            {
-                cardObjects[i] = cardObjects[i + 1];
-            }
-            cardObjects[cardObjects.Length - 1] = cardToMove;
-        }
-        else
-        {
-            Debug.LogError("Card with name " + cardName + " not found!");
-        }
-    }
 
     public IEnumerator getApiCardInfo()
     {
@@ -756,7 +742,8 @@ public class DraftRunner : MonoBehaviour
 
         yield return new WaitForSeconds(1f);
 
-        MoveCardToEnd(card.name);
+        //MoveCardToEnd(card.name);
+        cardObjects.Remove(card);
 
         hasChosen = true;
 
@@ -764,8 +751,16 @@ public class DraftRunner : MonoBehaviour
         {
             if (pickNum < 15)
             {
-                GameRunner bigRunner = GameObject.Find("Game Runner").GetComponent<GameRunner>();
-                bigRunner.ShiftCardObjectsBetweenScripts();
+                if (packNum % 2 == 0)
+                {
+                    GameRunner bigRunner = GameObject.Find("Game Runner").GetComponent<GameRunner>();
+                    bigRunner.ShiftCardObjectsBetweenScriptsRight();
+                }
+                else
+                { 
+                    GameRunner bigRunner = GameObject.Find("Game Runner").GetComponent<GameRunner>();
+                    bigRunner.ShiftCardObjectsBetweenScripts();
+                }
             }
             else if (packNum < 3)
             {
@@ -796,16 +791,25 @@ public class DraftRunner : MonoBehaviour
     public IEnumerator MoveCardsOff()
     {
         float timeElapsed = 0f;
-        float[] targetPosX = new float[15];
+        float[] targetPosX = new float[cardObjects.Count];
+        float offSet = 0;
+        if (packNum == 1 || packNum == 3)
+        {
+            offSet = 30f;
+        }
+        else
+        {
+            offSet = -30f;
+        }
 
         for (int i = 0; i < targetPosX.Length; i++)
         {
-            targetPosX[i] = cardObjects[i].transform.position.x + 30;
+            targetPosX[i] = cardObjects[i].transform.position.x + offSet;
         }
 
         while (timeElapsed < 2f)
         {
-            for (int i = 0; i < cardObjects.Length; i++)
+            for (int i = 0; i < cardObjects.Count; i++)
             {
                 Card cardScript = cardObjects[i].GetComponent<Card>();
                 if (!cardScript.getIsInDeck())
