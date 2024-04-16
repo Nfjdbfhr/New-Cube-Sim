@@ -31,35 +31,71 @@ public class GameRunner : MonoBehaviour
 
     public void ShiftCardObjectsBetweenScripts()
     {
-        GameObject[,] packs = new GameObject[8, 15];
+        int packLength = scripts[0].cardObjects.Count;
+        GameObject[,] packs = new GameObject[8, packLength];
 
         for (int pack = 0; pack < scripts.Length; pack++)
         {
-            for (int card = 0; card < 15; card++)
+            for (int card = 0; card < packLength; card++)
             {
                 packs[pack, card] = scripts[pack].cardObjects[card];
             }
         }
 
-        GameObject[] lastPack = new GameObject[15];
-        for (int i = 0; i < 15; i++)
+        GameObject[] lastPack = new GameObject[packLength];
+        for (int i = 0; i < packLength; i++)
         {
             lastPack[i] = scripts[7].cardObjects[i];
         }
         for (int i = 1; i < scripts.Length; i++)
         {
-            for (int j = 0; j < 15; j++)
+            for (int j = 0; j < packLength; j++)
             {
                 scripts[i].cardObjects[j] = packs[i - 1, j];
             }
             scripts[i].nextPack();
         }
 
-        for (int card = 0; card < 15; card++)
+        for (int card = 0; card < packLength; card++)
         {
             scripts[0].cardObjects[card] = lastPack[card];
         }
         
         scripts[0].nextPack();
+    }
+
+    public void ShiftCardObjectsBetweenScriptsRight()
+    {
+        int packLength = scripts[0].cardObjects.Count;
+        GameObject[,] packs = new GameObject[8, packLength];
+
+        for (int pack = 0; pack < scripts.Length; pack++)
+        {
+            for (int card = 0; card < packLength; card++)
+            {
+                packs[pack, card] = scripts[pack].cardObjects[card];
+            }
+        }
+
+        GameObject[] lastPack = new GameObject[packLength];
+        for (int i = 0; i < packLength; i++)
+        {
+            lastPack[i] = scripts[0].cardObjects[i];
+        }
+        for (int i = 0; i < scripts.Length - 1; i++)
+        {
+            for (int j = 0; j < packLength; j++)
+            {
+                scripts[i].cardObjects[j] = packs[i + 1, j];
+            }
+            scripts[i].nextPack();
+        }
+
+        for (int card = 0; card < packLength; card++)
+        {
+            scripts[7].cardObjects[card] = lastPack[card];
+        }
+
+        scripts[7].nextPack();
     }
 }
