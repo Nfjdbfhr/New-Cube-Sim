@@ -6,6 +6,7 @@ using UnityEngine.UI;
 using System.IO;
 using Unity.VisualScripting;
 using TMPro;
+using System;
 
 public class DraftRunner : MonoBehaviour
 {
@@ -257,8 +258,8 @@ public class DraftRunner : MonoBehaviour
 
         if (isBot)
         {
-            yield return new WaitForSeconds(Random.Range(2f, 5f));
-            takeBotCard();
+            yield return new WaitForSeconds(UnityEngine.Random.Range(2f, 5f));
+            StartCoroutine(takeBotCard());
         }
     }
 
@@ -309,109 +310,132 @@ public class DraftRunner : MonoBehaviour
         "Urza's Saga"
     };
 
-    public void takeBotCard()
+    public IEnumerator takeBotCard()
     {
-        int randomCard = 0;
-        int higestPowerIndex = powerCardNames.Length + 1;
+        // Initialize variables
+        int randomCardIndex = -1;
+        bool foundPowerCard = false;
+
+        // Check for powerful cards first
         for (int i = 0; i < cardObjects.Count; i++)
         {
             if (!cardObjects[i].GetComponent<Card>().getIsInDeck())
             {
-                for (int j = 0; j < powerCardNames.Length; j++)
+                string cardName = cardObjects[i].name;
+                if (Array.Exists(powerCardNames, element => element == cardName))
                 {
-                    if (cardObjects[i].name == powerCardNames[j])
+                    foundPowerCard = true;
+                    randomCardIndex = i;
+                    break;
+                }
+            }
+        }
+
+        // If found a powerful card, add its colors
+        if (foundPowerCard)
+        {
+            addColors(cardObjects[randomCardIndex]);
+        }
+        else
+        {
+            // Initialize variables to store matching card indices
+            List<int> matchingCardsIndices = new List<int>();
+
+            // Iterate through card objects to find matching colors
+            for (int i = 0; i < cardObjects.Count; i++)
+            {
+                if (!cardObjects[i].GetComponent<Card>().getIsInDeck())
+                {
+                    string cardColorString = cardObjects[i].GetComponent<Card>().getColor();
+                    string[] cardColors = cardColorString.Trim('[', ']').Split(',');
+
+                    // Check if the card's colors match any of the bot's colors
+                    bool isMatchingColor = false;
+                    foreach (string color in cardColors)
                     {
-                        if (j < higestPowerIndex)
+                        if (colors.Contains(color.Trim()))
                         {
-                            higestPowerIndex = j;
-                            randomCard = i;
+                            isMatchingColor = true;
+                            break;
                         }
                     }
-                }
-            }
-        }
-        if (higestPowerIndex != powerCardNames.Length + 1)
-        {
-            addColors(cardObjects[randomCard]);
-        }
 
-        bool foundCardInColor = false;
-
-        if (higestPowerIndex == powerCardNames.Length + 1)
-        {
-            bool isTakingLand = false;
-            if (Random.Range(0, 5) == 1 && pickNum > 4 && landPickedNum < 7)
-            {
-                List<int> landsFoundIndex = new List<int>();
-                for (int i = 0; i < cardObjects.Count; i++)
-                {
-                    if (cardObjects[i].GetComponent<Card>().getCardType().IndexOf("Land") != -1)
+                    // If a matching color is found, add the card index to the list
+                    if (isMatchingColor)
                     {
-                        landsFoundIndex.Add(i);
+                        matchingCardsIndices.Add(i);
+                        Debug.Log("Found matching card in colors: " + cardObjects[i].name + ", colors: " + cardColorString);
                     }
                 }
-
-                if (landsFoundIndex.Count > 0)
-                {
-                    randomCard = landsFoundIndex[Random.Range(0, landsFoundIndex.Count)];
-                    isTakingLand = true;
-                    landPickedNum++;
-                }
             }
-            if ((colors.Count > 1 || (colors.Count > 0 && Random.Range(0, 3) == 0)) && !isTakingLand)
-            {
-                List <int> cardsInColorIndex = new List<int>();
-                for (int i = 0; i < cardObjects.Count; i++)
-                {
-                    Card cardStats = cardObjects[i].GetComponent<Card>();
-                    if (!cardStats.getIsInDeck())
-                    {
-                        for (int cardObj = 0; cardObj < cardObjects.Count; cardObj++)
-                        {
-                            for (int j = 0; j < colors.Count; j++)
-                            {
-                                //for (int letter = 0; letter < cardObjects[cardObj].GetComponent<Card>().getColor().Length; letter++)
-                                //{
-                                //if (colors[j].IndexOf())
-                                if (cardObjects[cardObj].GetComponent<Card>().getColor().IndexOf(colors[j]) != -1)
-                                {
-                                    cardsInColorIndex.Add(cardObj);
-                                    foundCardInColor = true;
-                                }
-                                //}
-                            }
-                        }
-                    }
-                }
-                if (foundCardInColor)
-                {
-                    randomCard = cardsInColorIndex[Random.Range(0, cardsInColorIndex.Count)];
-                    //addColors(cardObjects[randomCard]);
-                }
-            }
-            if (!foundCardInColor)
-            {
-                do
-                {
-                    randomCard = Random.Range(0, cardObjects.Count);
-                }
-                while(cardObjects[randomCard].GetComponent<Card>().getIsInDeck());
 
-                if (colors.Count < 2 || Random.Range(0, 50) == 25)
-                {
-                    addColors(cardObjects[randomCard]);
-                }
-                else
-                {
-                    StartCoroutine(moveToSideboard(cardObjects[randomCard], 0.1f, manaSlotPositions[9].transform.position));
-                }
+            // If there are matching cards, pick a random one from them
+            if (matchingCardsIndices.Count > 0)
+            {
+                randomCardIndex = matchingCardsIndices[UnityEngine.Random.Range(0, matchingCardsIndices.Count)];
+            }
+            else
+            {
+                // If no matching cards found, pick a random card
+                randomCardIndex = UnityEngine.Random.Range(0, cardObjects.Count);
             }
         }
 
-        Card cardScript = cardObjects[randomCard].GetComponent<Card>();
-        cardScript.setIsInDeck(true);
-        StartCoroutine(centerSelectedCard(cardObjects[randomCard], 0.3f, centerPosition.transform.position));
-        StartCoroutine(MoveCardsOff());
+        // Ensure that randomCardIndex is within the valid range
+        if (randomCardIndex >= 0 && randomCardIndex < cardObjects.Count)
+        {
+            // Set the selected card as "in deck"
+            cardObjects[randomCardIndex].GetComponent<Card>().setIsInDeck(true);
+
+            // Add colors if a powerful card is found or if it's picked due to color matching
+            if (foundPowerCard || randomCardIndex != -1)
+            {
+                addColors(cardObjects[randomCardIndex]);
+            }
+
+            // Move the selected card to the center
+            StartCoroutine(centerSelectedCard(cardObjects[randomCardIndex], 0.3f, centerPosition.transform.position));
+            StartCoroutine(MoveCardsOff());
+        }
+        else
+        {
+            Debug.LogError("Random card index is out of range.");
+        }
+
+        yield return null;
+    }
+
+
+
+
+
+    public bool IsPowerfulCard(string cardName)
+    {
+        return Array.Exists(powerCardNames, element => element == cardName);
+    }
+
+
+    public bool checkForColorMatch(GameObject card)
+    {
+        string cardColors = card.GetComponent<Card>().getColor();
+
+        if (cardColors == "[]")
+        {
+            return true;
+        }
+
+        cardColors = cardColors.Replace("[", "").Replace("]", "").Replace("\"", "");
+
+        string[] letters = cardColors.Split(',');
+
+        foreach (string color in letters)
+        {
+            if (!colors.Contains(color))
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     public void addColors(GameObject card)
@@ -434,6 +458,12 @@ public class DraftRunner : MonoBehaviour
                 colors.Add(color);
             }
         }
+    }
+
+    public bool CheckForExtraColors(GameObject card)
+    {
+        string cardColors = card.GetComponent<Card>().getColor();
+        return cardColors != "[]" && !colors.Contains(cardColors);
     }
 
     public void nextPack()
@@ -493,7 +523,7 @@ public class DraftRunner : MonoBehaviour
         {
             do
             {
-                cardToAdd = Random.Range(0, cubeList.Count);
+                cardToAdd = UnityEngine.Random.Range(0, cubeList.Count);
                 pack[card] = cubeList[cardToAdd];
                 cardName = cubeList[cardToAdd];
                 cubeList.RemoveAt(cardToAdd);
