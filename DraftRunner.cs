@@ -914,7 +914,12 @@ public class DraftRunner : MonoBehaviour
             }
             else
             {
+                string deckListString = "";
 
+                for (int i = 0; i < deckList.Count; i++)
+                {
+                    deckListString += deckList[i] + ", ";
+                }
             }
         }
     }
