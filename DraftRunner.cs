@@ -38,6 +38,7 @@ public class DraftRunner : MonoBehaviour
 
     public string[] pack = new string[15];
     public string[] cardTypes = { "Land", "Creature", "Instant", "Sorcery", "Artifact", "Enchantment" };
+    public List<string> deckList = new List<string>();
     public List<string> colors = new List<string>();
 
     public int[] cardsOfEachType = new int[7];
@@ -461,10 +462,6 @@ public class DraftRunner : MonoBehaviour
     }
 
 
-
-
-
-
     public bool IsPowerfulCard(string cardName)
     {
         return Array.Exists(powerCardNames, element => element == cardName);
@@ -886,6 +883,7 @@ public class DraftRunner : MonoBehaviour
 
         //MoveCardToEnd(card.name);
         cardObjects.Remove(card);
+        deckList.Add(card.name);
 
         hasChosen = true;
 
@@ -913,6 +911,10 @@ public class DraftRunner : MonoBehaviour
                     allRunners[i].pickNum = 0;
                     allRunners[i].instantiateCardObjects();
                 }
+            }
+            else
+            {
+
             }
         }
     }
@@ -972,7 +974,14 @@ public class DraftRunner : MonoBehaviour
 
     public IEnumerator moveToSideboard(GameObject card, float glideDuration, Vector3 targetPos)
     {
-        
+        for (int i = 0; i < deckList.Count; i++)
+        {
+            if (deckList[i] == card.name)
+            {
+                deckList.RemoveAt(i);
+                break;
+            }
+        }
         Card cardScript = card.GetComponent<Card>();
         cardScript.setIsInSideboard(true);
 
@@ -1035,6 +1044,7 @@ public class DraftRunner : MonoBehaviour
 
     public IEnumerator moveOutOfSideboard(GameObject card, float glideDuration)
     {
+        deckList.Add(card.name);
         Card cardScript = card.GetComponent<Card>();
         cardScript.setIsInSideboard(false);
 
