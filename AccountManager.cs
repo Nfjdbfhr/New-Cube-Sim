@@ -139,7 +139,7 @@ public class AccountManager : MonoBehaviour
             dbConnection.Open();
             using (IDbCommand dbCommand = dbConnection.CreateCommand())
             {
-                string SQLQuery = "SELECT COUNT(*) FROM " + dataBaseName + " WHERE Username = @Username";
+                string SQLQuery = "SELECT COUNT(*) FROM " + dataBaseName + " WHERE Username = @Username AND Password = @Password";
                 dbCommand.CommandText = SQLQuery;
 
                 IDbDataParameter paramUsername = dbCommand.CreateParameter();
@@ -147,18 +147,57 @@ public class AccountManager : MonoBehaviour
                 paramUsername.Value = username;
                 dbCommand.Parameters.Add(paramUsername);
 
+                IDbDataParameter paramPassword = dbCommand.CreateParameter();
+                paramPassword.ParameterName = "@Password";
+                paramPassword.Value = password;
+                dbCommand.Parameters.Add(paramPassword);
+
                 int count = Convert.ToInt32(dbCommand.ExecuteScalar());
 
                 if (count > 0)
                 {
-                    Debug.Log("Username already exists.");
+                    signedInAccountName = username;
+                    Debug.Log("Login successful."); // Username and password match
                 }
                 else
                 {
-                    Debug.Log("Username does not exist.");
+                    Debug.Log("Invalid username or password."); // Username or password doesn't match
                 }
             }
         }
     }
-}
 
+    public void updateDeckList(string username, string newDeckList)
+    {
+        // Specify the filepath of your SQLite database
+        string dbFilePath = "Assets/_Databases/Accounts.db";
+
+        // Construct the connection string
+        string conn = "URI=file:" + dbFilePath;
+
+        using (IDbConnection dbConnection = new SqliteConnection(conn))
+        {
+            dbConnection.Open();
+            using (IDbCommand dbCommand = dbConnection.CreateCommand())
+            {
+                // Use parameterized query to prevent SQL injection
+                string SQLQuery = "UPDATE " + dataBaseName + " SET DeckList = @DeckList WHERE Username = @Username";
+                dbCommand.CommandText = SQLQuery;
+
+                // Add parameters
+                IDbDataParameter paramUsername = dbCommand.CreateParameter();
+                paramUsername.ParameterName = "@Username";
+                paramUsername.Value = username;
+                dbCommand.Parameters.Add(paramUsername);
+
+                IDbDataParameter paramDeckList = dbCommand.CreateParameter();
+                paramDeckList.ParameterName = "@DeckList";
+                paramDeckList.Value = newDeckList;
+                dbCommand.Parameters.Add(paramDeckList);
+
+                // ExecuteNonQuery for UPDATE operation
+                dbCommand.ExecuteNonQuery();
+            }
+        }
+    }
+}
