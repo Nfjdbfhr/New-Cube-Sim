@@ -77,41 +77,41 @@ public class HomeBackgroundRunner : MonoBehaviour
     }
 
     IEnumerator FadeBackground(int index, float targetAlpha)
-{
-    // Get the sprite renderer component of the background
-    SpriteRenderer spriteRenderer = backgrounds[index].GetComponent<SpriteRenderer>();
-
-    // Get the current alpha value
-    float startAlpha = spriteRenderer.color.a;
-
-    // Time elapsed
-    float elapsedTime = 0f;
-
-    // While we haven't reached the target alpha
-    while (elapsedTime < fadeDuration)
     {
-        // Calculate the new alpha value based on the elapsed time
-        float newAlpha = Mathf.Lerp(startAlpha, targetAlpha, elapsedTime / fadeDuration);
+        // Get the sprite renderer component of the background
+        SpriteRenderer spriteRenderer = backgrounds[index].GetComponent<SpriteRenderer>();
 
-        // Set the new color with the updated alpha value
-        spriteRenderer.color = new Color(spriteRenderer.color.r, spriteRenderer.color.g, spriteRenderer.color.b, newAlpha);
+        // Get the current alpha value
+        float startAlpha = spriteRenderer.color.a;
 
-        // Update the elapsed time
-        elapsedTime += Time.deltaTime;
+        // Time elapsed
+        float elapsedTime = 0f;
 
-        // Wait for the next frame
-        yield return null;
+        // While we haven't reached the target alpha
+        while (elapsedTime < fadeDuration)
+        {
+            // Calculate the new alpha value based on the elapsed time
+            float newAlpha = Mathf.Lerp(startAlpha, targetAlpha, elapsedTime / fadeDuration);
+
+            // Set the new color with the updated alpha value
+            spriteRenderer.color = new Color(spriteRenderer.color.r, spriteRenderer.color.g, spriteRenderer.color.b, newAlpha);
+
+            // Update the elapsed time
+            elapsedTime += Time.deltaTime;
+
+            // Wait for the next frame
+            yield return null;
+        }
+
+        // Ensure the final alpha value is exactly the target alpha
+        spriteRenderer.color = new Color(spriteRenderer.color.r, spriteRenderer.color.g, spriteRenderer.color.b, targetAlpha);
+
+        // If the target alpha is 0, deactivate the GameObject
+        if (targetAlpha == 0f)
+        {
+            backgrounds[index].SetActive(false);
+        }
     }
-
-    // Ensure the final alpha value is exactly the target alpha
-    spriteRenderer.color = new Color(spriteRenderer.color.r, spriteRenderer.color.g, spriteRenderer.color.b, targetAlpha);
-
-    // If the target alpha is 0, deactivate the GameObject
-    if (targetAlpha == 0f)
-    {
-        backgrounds[index].SetActive(false);
-    }
-}
 
 
     void OnDestroy()
