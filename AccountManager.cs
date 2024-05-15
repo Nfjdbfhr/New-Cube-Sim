@@ -77,7 +77,7 @@ public class AccountManager : MonoBehaviour
 
     public IEnumerator moveCameraToLogin()
     {
-        Vector3 targetPosition = new Vector3(-61.4000015f, 19.9699993f, 10.3660002f);
+        Vector3 targetPosition = new Vector3(-61.4000015f, 19.9699993f, camera.transform.position.z);
         Vector3 initialPosition = camera.transform.position;
 
         isMovingCamera = true;
@@ -145,7 +145,7 @@ public class AccountManager : MonoBehaviour
 
     public IEnumerator moveCamerBackHome()
     {
-        Vector3 targetPosition = new Vector3(0f, 19.9699993f, 10.3660002f);
+        Vector3 targetPosition = new Vector3(0f, 19.9699993f, camera.transform.position.z);
         Vector3 initialPosition = camera.transform.position;
 
         isMovingCamera = true;
@@ -212,7 +212,7 @@ public class AccountManager : MonoBehaviour
     public IEnumerator startDraftCamera(string formatChosen)
     {
         int speed = 27;
-        Vector3 targetPosition = new Vector3(0f, 1f, 10.3660002f);
+        Vector3 targetPosition = new Vector3(0f, 1f, camera.transform.position.z);
         Vector3 initialPosition = camera.transform.position;
 
         isMovingCamera = true;
@@ -264,6 +264,7 @@ public class AccountManager : MonoBehaviour
         }   
 
         camera.transform.position = targetPosition;
+        GameObject.Find("Background Runner").GetComponent<HomeBackgroundRunner>().isOnHome = false;
         isMovingCamera = false;
 
         for(int i = 0; i < scripts.Length; i++)
@@ -360,8 +361,6 @@ public class AccountManager : MonoBehaviour
                 }
             }
         }
-
-        return true;
     }
 
     public void checkLogin()
