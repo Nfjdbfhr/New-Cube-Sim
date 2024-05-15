@@ -314,7 +314,6 @@ public class DraftRunner : MonoBehaviour
 
         if (isBot)
         {
-            yield return new WaitForSeconds(UnityEngine.Random.Range(2f, 5f));
             StartCoroutine(takeBotCard());
         }
     }
