@@ -193,11 +193,17 @@ public class DraftRunner : MonoBehaviour
                         {
                             if (hit.collider.gameObject.GetComponent<Card>().getIsInSideboard())
                             {
-                                StartCoroutine(moveOutOfSideboard(hit.collider.gameObject, 0.1f));
+                                if (!cardIsUp)
+                                {
+                                    StartCoroutine(moveOutOfSideboard(hit.collider.gameObject, 0.1f));
+                                }
                             }
                             else
                             {
-                                StartCoroutine(moveToSideboard(hit.collider.gameObject, 0.1f, manaSlotPositions[9].transform.position));
+                                if (!cardIsUp)
+                                {
+                                    StartCoroutine(moveToSideboard(hit.collider.gameObject, 0.1f, manaSlotPositions[9].transform.position));
+                                }
                             }
                         } 
                         if (Input.GetMouseButtonDown(1) && canZoom)
@@ -1069,7 +1075,7 @@ public class DraftRunner : MonoBehaviour
     }
 
     public IEnumerator moveOutOfSideboard(GameObject card, float glideDuration)
-    {
+    {        
         if (!isBot)
         {
             for (int i = 0; i < downloader.sideboard.Count; i++)
