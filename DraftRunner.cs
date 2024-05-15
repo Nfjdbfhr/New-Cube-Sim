@@ -100,11 +100,6 @@ public class DraftRunner : MonoBehaviour
         {
             return;
         }
-        
-        if (camera != null)
-        {
-            camera.transform.position = new Vector3(0f, 1f, 10.3660002f);
-        }
 
         if (transform.name.IndexOf("bot") == -1)
         {
